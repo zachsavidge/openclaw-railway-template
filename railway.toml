@@ -1,5 +1,7 @@
 [build]
 builder = "dockerfile"
+# This installs the gog binary during the build phase
+prebuildCommand = "curl -sSL https://raw.githubusercontent.com/ctreminiom/gog/master/install.sh | sh"
 
 [deploy]
 healthcheckPath = "/setup/healthz"
