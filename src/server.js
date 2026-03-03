@@ -189,6 +189,25 @@ async function startGateway() {
     console.log(`[gateway] Sync output: ${syncResult.output}`);
   }
 
+  // Sync allowedOrigins so the Control UI can connect via WebSocket from the public domain.
+  const publicDomain = process.env.RAILWAY_PUBLIC_DOMAIN?.trim();
+  if (publicDomain) {
+    const publicOrigin = `https://${publicDomain}`;
+    const originsResult = await runCmd(
+      OPENCLAW_NODE,
+      clawArgs([
+        "config",
+        "set",
+        "--json",
+        "gateway.controlUi.allowedOrigins",
+        JSON.stringify([publicOrigin]),
+      ]),
+    );
+    console.log(
+      `[gateway] Sync allowedOrigins: ${publicOrigin} exit=${originsResult.code}`,
+    );
+  }
+
   const args = [
     "gateway",
     "run",
@@ -708,6 +727,23 @@ app.post("/setup/api/run", requireSetupAuth, async (req, res) => {
         ]),
       );
       extra += `[config] gateway.controlUi.allowInsecureAuth=true exit=${allowInsecureResult.code}\n`;
+
+      // Set allowedOrigins so the Control UI can connect via WebSocket from the public domain.
+      const onboardPublicDomain = process.env.RAILWAY_PUBLIC_DOMAIN?.trim();
+      if (onboardPublicDomain) {
+        const onboardOrigin = `https://${onboardPublicDomain}`;
+        const originsResult = await runCmd(
+          OPENCLAW_NODE,
+          clawArgs([
+            "config",
+            "set",
+            "--json",
+            "gateway.controlUi.allowedOrigins",
+            JSON.stringify([onboardOrigin]),
+          ]),
+        );
+        extra += `[config] gateway.controlUi.allowedOrigins=${onboardOrigin} exit=${originsResult.code}\n`;
+      }
 
       const tokenResult = await runCmd(
         OPENCLAW_NODE,
