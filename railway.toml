@@ -10,3 +10,4 @@ restartPolicyType = "on_failure"
 
 [variables]
 PORT = "8080"
+# Ensure RAILWAY_PUBLIC_DOMAIN is available for allowedOrigins sync
