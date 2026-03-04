@@ -15,6 +15,12 @@ if [ -d /app/skills ]; then
   echo "[entrypoint] Synced custom skills to workspace"
 fi
 
+# Apply safe concurrency defaults to avoid Anthropic API rate limits.
+# These run as openclaw user via the openclaw CLI before the server starts.
+gosu openclaw openclaw config set agents.defaults.maxConcurrent 1 2>/dev/null || true
+gosu openclaw openclaw config set agents.defaults.subagents.maxConcurrent 2 2>/dev/null || true
+echo "[entrypoint] Applied concurrency limits (maxConcurrent=1, subagents=2)"
+
 # Persist Homebrew to Railway volume so it survives container rebuilds
 BREW_VOLUME="/data/.linuxbrew"
 BREW_SYSTEM="/home/openclaw/.linuxbrew"

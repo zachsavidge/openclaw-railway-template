@@ -1027,6 +1027,7 @@ const ALLOWED_CONSOLE_COMMANDS = new Set([
   "openclaw.doctor",
   "openclaw.logs.tail",
   "openclaw.config.get",
+  "openclaw.config.set",
   "openclaw.devices.list",
   "openclaw.devices.approve",
   "openclaw.plugins.list",
@@ -1094,6 +1095,34 @@ app.post("/setup/api/console/run", requireSetupAuth, async (req, res) => {
         });
       }
       result = await runCmd(OPENCLAW_NODE, clawArgs(["config", "get", cfgPath]));
+    } else if (command === "openclaw.config.set") {
+      // arg is "path value" or "--json path jsonValue"
+      const setArg = arg?.trim();
+      if (!setArg) {
+        return res.status(400).json({
+          ok: false,
+          error: 'Config set requires "path value" (e.g., "agents.defaults.maxConcurrent 2")',
+        });
+      }
+      // Parse: either "--json path jsonValue" or "path value"
+      const jsonMatch = setArg.match(/^--json\s+(\S+)\s+(.+)$/s);
+      const plainMatch = setArg.match(/^(\S+)\s+(.+)$/s);
+      if (jsonMatch) {
+        result = await runCmd(
+          OPENCLAW_NODE,
+          clawArgs(["config", "set", "--json", jsonMatch[1], jsonMatch[2]])
+        );
+      } else if (plainMatch) {
+        result = await runCmd(
+          OPENCLAW_NODE,
+          clawArgs(["config", "set", plainMatch[1], plainMatch[2]])
+        );
+      } else {
+        return res.status(400).json({
+          ok: false,
+          error: 'Invalid format. Use "path value" or "--json path jsonValue"',
+        });
+      }
     } else if (command === "openclaw.devices.list") {
       result = await runCmd(OPENCLAW_NODE, clawArgs(["devices", "list"]));
     } else if (command === "openclaw.devices.approve") {
