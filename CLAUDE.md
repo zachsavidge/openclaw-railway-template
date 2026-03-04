@@ -217,6 +217,82 @@ This project has been onboarded with **Serena** (semantic coding assistant via M
 
 This avoids repeatedly reading large files and provides instant context about the project.
 
+## Browser Skill (Playwright)
+
+**File:** `src/browser-skill.js` — Headless Chromium automation CLI for the OpenClaw agent.
+
+### Architecture
+
+Client/server model in a single ESM file:
+
+- **Client mode** (default): sends commands via HTTP to the server. Auto-starts the server on first use.
+- **Server mode** (`--server`): manages the Chromium browser, listens on a random localhost port, auto-closes after 5 min idle.
+
+Session state (current page, cookies, history) persists between commands within a server session, enabling multi-step booking/interaction workflows.
+
+### CLI Usage
+
+```bash
+# Navigate to a page
+node /app/src/browser-skill.js navigate '{"url":"https://example.com"}'
+
+# Click an element
+node /app/src/browser-skill.js click '{"selector":"#search-btn"}'
+
+# Type into an input (human-like 50ms delay per key)
+node /app/src/browser-skill.js type '{"selector":"#q","text":"hotels in NYC"}'
+
+# Fill multiple form fields
+node /app/src/browser-skill.js fill_form '{"fields":[{"selector":"#name","value":"John"},{"selector":"#email","value":"john@test.com"}]}'
+
+# Wait for element or fixed time
+node /app/src/browser-skill.js wait '{"selector":".results"}'
+node /app/src/browser-skill.js wait '{"time":3000}'
+
+# Get text content (truncated to 10k chars by default)
+node /app/src/browser-skill.js get_text '{"selector":".price"}'
+
+# Screenshot (saved to /data/workspace/screenshots/)
+node /app/src/browser-skill.js screenshot '{"fullPage":true}'
+
+# Scroll
+node /app/src/browser-skill.js scroll '{"direction":"down","amount":500}'
+
+# Run arbitrary JavaScript
+node /app/src/browser-skill.js evaluate '{"js":"document.title"}'
+
+# Close browser (frees memory)
+node /app/src/browser-skill.js close
+```
+
+All commands output JSON: `{"ok": true, "data": {...}}` or `{"ok": false, "error": "..."}`.
+
+### Stealth Features
+
+- Disables `navigator.webdriver` detection
+- Custom realistic Chrome user-agent
+- `--disable-blink-features=AutomationControlled` launch flag
+- `window.chrome.runtime` stub and plugin emulation
+- Realistic viewport (1920x1080) and locale (`en-US`)
+
+### Memory Management
+
+- Server auto-closes after `BROWSER_IDLE_TIMEOUT` (default 5 min)
+- SIGTERM/SIGINT handlers for graceful cleanup
+- Session file at `/tmp/browser-skill-session.json` cleaned up on exit
+- Agent should call `close` when done to free memory immediately
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BROWSER_TIMEOUT` | `30000` | Per-action timeout (ms) |
+| `BROWSER_IDLE_TIMEOUT` | `300000` | Server idle timeout before auto-close (ms) |
+| `BROWSER_VIEWPORT_WIDTH` | `1920` | Viewport width |
+| `BROWSER_VIEWPORT_HEIGHT` | `1080` | Viewport height |
+| `BROWSER_SCREENSHOTS_DIR` | `/data/workspace/screenshots` | Screenshot save directory |
+| `PLAYWRIGHT_BROWSERS_PATH` | `/opt/playwright-browsers` | Chromium binary location (set in Dockerfile) |
+
 ## New Features (Enhanced OpenClaw - Days 1-7)
 
 ### Day 1: Health, Diagnostics & Gateway Lifecycle

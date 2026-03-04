@@ -2,7 +2,7 @@
 set -e
 
 # Ensure /data and OpenClaw state paths are writable by openclaw
-mkdir -p /data/.openclaw/identity /data/workspace
+mkdir -p /data/.openclaw/identity /data/workspace /data/workspace/screenshots
 chown -R openclaw:openclaw /data 2>/dev/null || true
 chmod 700 /data 2>/dev/null || true
 chmod 700 /data/.openclaw 2>/dev/null || true

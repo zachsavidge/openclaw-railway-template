@@ -85,6 +85,31 @@ RUN apt-get update \
     procps \
     python3 \
     build-essential \
+    # Chromium runtime dependencies for Playwright browser automation
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libdbus-1-3 \
+    libxkbcommon0 \
+    libatspi2.0-0 \
+    libx11-6 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
+    libexpat1 \
+    libxcb1 \
+    # Fonts for proper text rendering in headless Chromium
+    fonts-liberation \
+    fonts-noto-color-emoji \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -93,6 +118,10 @@ WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --prod --frozen-lockfile && pnpm store prune
+
+# Install Playwright's Chromium binary into a shared location accessible by all users.
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
+RUN npx playwright install chromium
 
 # Copy built openclaw
 COPY --from=openclaw-build /openclaw /openclaw
@@ -109,7 +138,8 @@ RUN chmod +x ./entrypoint.sh
 RUN useradd -m -s /bin/bash openclaw \
   && chown -R openclaw:openclaw /app \
   && mkdir -p /data && chown openclaw:openclaw /data \
-  && mkdir -p /home/linuxbrew/.linuxbrew && chown -R openclaw:openclaw /home/linuxbrew
+  && mkdir -p /home/linuxbrew/.linuxbrew && chown -R openclaw:openclaw /home/linuxbrew \
+  && chmod -R a+rX /opt/playwright-browsers
 
 USER openclaw
 RUN NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
