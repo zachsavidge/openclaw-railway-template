@@ -2,11 +2,18 @@
 set -e
 
 # Ensure /data and OpenClaw state paths are writable by openclaw
-mkdir -p /data/.openclaw/identity /data/workspace /data/workspace/screenshots
+mkdir -p /data/.openclaw/identity /data/workspace /data/workspace/screenshots /data/workspace/skills
 chown -R openclaw:openclaw /data 2>/dev/null || true
 chmod 700 /data 2>/dev/null || true
 chmod 700 /data/.openclaw 2>/dev/null || true
 chmod 700 /data/.openclaw/identity 2>/dev/null || true
+
+# Sync bundled custom skills to workspace (overwrites on each boot to stay current)
+if [ -d /app/skills ]; then
+  cp -r /app/skills/* /data/workspace/skills/ 2>/dev/null || true
+  chown -R openclaw:openclaw /data/workspace/skills 2>/dev/null || true
+  echo "[entrypoint] Synced custom skills to workspace"
+fi
 
 # Persist Homebrew to Railway volume so it survives container rebuilds
 BREW_VOLUME="/data/.linuxbrew"
