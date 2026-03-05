@@ -35,6 +35,7 @@ const SESSION_FILE = process.env.BROWSER_SESSION_FILE || "/tmp/browser-skill-ses
 const SCREENSHOTS_DIR = process.env.BROWSER_SCREENSHOTS_DIR || "/data/workspace/screenshots";
 const DEFAULT_TIMEOUT = Number.parseInt(process.env.BROWSER_TIMEOUT || "30000", 10);
 const IDLE_TIMEOUT = Number.parseInt(process.env.BROWSER_IDLE_TIMEOUT || "300000", 10); // 5 min
+const MAX_EVAL_OUTPUT = Number.parseInt(process.env.BROWSER_MAX_EVAL_CHARS || "3000", 10);
 const VIEWPORT = {
   width: Number.parseInt(process.env.BROWSER_VIEWPORT_WIDTH || "1920", 10),
   height: Number.parseInt(process.env.BROWSER_VIEWPORT_HEIGHT || "1080", 10),
@@ -212,7 +213,7 @@ async function runServer() {
     } else {
       text = await page.innerText("body");
     }
-    const maxLen = args.maxLength || 10000;
+    const maxLen = args.maxLength || 5000;
     if (text.length > maxLen) {
       text = text.substring(0, maxLen) + `\n...[truncated, ${text.length} total chars]`;
     }
@@ -273,7 +274,11 @@ async function runServer() {
 
   async function cmdEvaluate(args) {
     if (!args.js) throw new Error("Missing required arg: js");
-    const result = await page.evaluate(args.js);
+    let result = await page.evaluate(args.js);
+    const str = typeof result === "string" ? result : JSON.stringify(result);
+    if (str && str.length > MAX_EVAL_OUTPUT) {
+      result = str.substring(0, MAX_EVAL_OUTPUT) + `\n...[truncated, ${str.length} total chars]`;
+    }
     return { result };
   }
 
@@ -334,8 +339,17 @@ async function runServer() {
 
     try {
       const data = await handler(args);
+      const payload = JSON.stringify({ ok: true, data });
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true, data }));
+      if (payload.length > 8000) {
+        res.end(JSON.stringify({
+          ok: true,
+          data: { _truncated: true, _originalChars: payload.length,
+                  partial: payload.substring(0, 8000) },
+        }));
+      } else {
+        res.end(payload);
+      }
     } catch (err) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ ok: false, error: err.message || String(err) }));
