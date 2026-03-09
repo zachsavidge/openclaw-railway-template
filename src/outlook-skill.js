@@ -89,13 +89,13 @@ const commands = {
     const input = {};
     if (args.folder) input.folder_name = args.folder;
     if (args.top) input.top = args.top;
-    const result = await composioRequest("OUTLOOK_LIST_MESSAGES", input);
+    const result = await composioRequest("OUTLOOK_OUTLOOK_LIST_MESSAGES", input);
     return result;
   },
 
   async get_email(args) {
     if (!args.messageId) throw new Error("Missing required arg: messageId");
-    const result = await composioRequest("OUTLOOK_GET_MESSAGE", {
+    const result = await composioRequest("OUTLOOK_OUTLOOK_GET_MESSAGE", {
       message_id: args.messageId,
     });
     return result;
@@ -103,7 +103,7 @@ const commands = {
 
   async search_emails(args) {
     if (!args.query) throw new Error("Missing required arg: query");
-    const result = await composioRequest("OUTLOOK_SEARCH_MESSAGES", {
+    const result = await composioRequest("OUTLOOK_OUTLOOK_SEARCH_MESSAGES", {
       search_query: args.query,
     });
     return result;
@@ -120,14 +120,14 @@ const commands = {
     if (args.cc) input.cc = args.cc;
     if (args.bcc) input.bcc = args.bcc;
     if (args.isHtml) input.is_html = true;
-    const result = await composioRequest("OUTLOOK_SEND_EMAIL", input);
+    const result = await composioRequest("OUTLOOK_OUTLOOK_SEND_EMAIL", input);
     return result;
   },
 
   async reply_email(args) {
     if (!args.messageId || !args.body)
       throw new Error("Missing required args: messageId, body");
-    const result = await composioRequest("OUTLOOK_REPLY_EMAIL", {
+    const result = await composioRequest("OUTLOOK_OUTLOOK_REPLY_EMAIL", {
       message_id: args.messageId,
       body: args.body,
     });
@@ -137,7 +137,7 @@ const commands = {
   async create_draft(args) {
     if (!args.to || !args.subject || !args.body)
       throw new Error("Missing required args: to, subject, body");
-    const result = await composioRequest("OUTLOOK_CREATE_DRAFT", {
+    const result = await composioRequest("OUTLOOK_OUTLOOK_CREATE_DRAFT", {
       to: args.to,
       subject: args.subject,
       body: args.body,
@@ -147,7 +147,7 @@ const commands = {
 
   async send_draft(args) {
     if (!args.messageId) throw new Error("Missing required arg: messageId");
-    const result = await composioRequest("OUTLOOK_SEND_DRAFT", {
+    const result = await composioRequest("OUTLOOK_OUTLOOK_SEND_EMAIL", {
       message_id: args.messageId,
     });
     return result;
@@ -156,37 +156,38 @@ const commands = {
   async forward_email(args) {
     if (!args.messageId || !args.to)
       throw new Error("Missing required args: messageId, to");
-    const result = await composioRequest("OUTLOOK_FORWARD_MESSAGE", {
+    const result = await composioRequest("OUTLOOK_OUTLOOK_MOVE_MESSAGE", {
       message_id: args.messageId,
-      to_recipients: args.to,
-      comment: args.comment || "",
+      destination_id: args.to,
     });
     return result;
   },
 
   async delete_email(args) {
     if (!args.messageId) throw new Error("Missing required arg: messageId");
-    const result = await composioRequest("OUTLOOK_DELETE_MESSAGE", {
+    // Move to Deleted Items folder
+    const result = await composioRequest("OUTLOOK_OUTLOOK_MOVE_MESSAGE", {
       message_id: args.messageId,
+      destination_id: "deleteditems",
     });
     return result;
   },
 
   async list_folders() {
-    const result = await composioRequest("OUTLOOK_LIST_MAIL_FOLDERS", {});
+    const result = await composioRequest("OUTLOOK_OUTLOOK_LIST_MAIL_FOLDERS", {});
     return result;
   },
 
   async list_events(args) {
     const input = {};
     if (args.top) input.top = args.top;
-    const result = await composioRequest("OUTLOOK_LIST_EVENTS", input);
+    const result = await composioRequest("OUTLOOK_OUTLOOK_LIST_EVENTS", input);
     return result;
   },
 
   async get_event(args) {
     if (!args.eventId) throw new Error("Missing required arg: eventId");
-    const result = await composioRequest("OUTLOOK_GET_EVENT", {
+    const result = await composioRequest("OUTLOOK_OUTLOOK_GET_EVENT", {
       event_id: args.eventId,
     });
     return result;
@@ -204,14 +205,14 @@ const commands = {
     if (args.location) input.location = args.location;
     if (args.body) input.body = args.body;
     if (args.isOnline) input.is_online_meeting = true;
-    const result = await composioRequest("OUTLOOK_CALENDAR_CREATE_EVENT", input);
+    const result = await composioRequest("OUTLOOK_OUTLOOK_CALENDAR_CREATE_EVENT", input);
     return result;
   },
 
   async calendar_view(args) {
     if (!args.startDateTime || !args.endDateTime)
       throw new Error("Missing required args: startDateTime, endDateTime");
-    const result = await composioRequest("OUTLOOK_GET_CALENDAR_VIEW", {
+    const result = await composioRequest("OUTLOOK_OUTLOOK_GET_SCHEDULE", {
       start_date_time: args.startDateTime,
       end_date_time: args.endDateTime,
     });
@@ -219,7 +220,7 @@ const commands = {
   },
 
   async get_profile() {
-    const result = await composioRequest("OUTLOOK_GET_PROFILE", {});
+    const result = await composioRequest("OUTLOOK_OUTLOOK_GET_PROFILE", {});
     return result;
   },
 };
