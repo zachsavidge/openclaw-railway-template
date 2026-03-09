@@ -58,8 +58,8 @@ gosu openclaw openclaw config set --json skills.allowBundled '["gog","weather"]'
 echo "[entrypoint] Applied cost-efficiency config"
 
 # ── Composio Outlook credentials (james@elevatecappartners.com) ───────
-export COMPOSIO_API_KEY="ak_fWyNZGido3At63My5hbl"
-export COMPOSIO_OUTLOOK_ACCOUNT_ID="4b0339c1-b1a6-443a-a282-0c070f3fe1fe"
+# COMPOSIO_API_KEY and COMPOSIO_OUTLOOK_ACCOUNT_ID are set via Railway
+# environment variables — never hardcode secrets in source code.
 
 # Persist Homebrew to Railway volume so it survives container rebuilds
 BREW_VOLUME="/data/.linuxbrew"

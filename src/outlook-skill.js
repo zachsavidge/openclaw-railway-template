@@ -28,8 +28,12 @@ import https from "node:https";
 
 // ── Configuration ──────────────────────────────────────────────────────
 
-const COMPOSIO_API_KEY = process.env.COMPOSIO_API_KEY || "ak_fWyNZGido3At63My5hbl";
-const CONNECTED_ACCOUNT_ID = process.env.COMPOSIO_OUTLOOK_ACCOUNT_ID || "4b0339c1-b1a6-443a-a282-0c070f3fe1fe";
+const COMPOSIO_API_KEY = process.env.COMPOSIO_API_KEY;
+const CONNECTED_ACCOUNT_ID = process.env.COMPOSIO_OUTLOOK_ACCOUNT_ID;
+if (!COMPOSIO_API_KEY || !CONNECTED_ACCOUNT_ID) {
+  console.log(JSON.stringify({ ok: false, error: "Missing COMPOSIO_API_KEY or COMPOSIO_OUTLOOK_ACCOUNT_ID env vars" }));
+  process.exit(1);
+}
 const MAX_OUTPUT = Number.parseInt(process.env.OUTLOOK_MAX_OUTPUT || "5000", 10);
 
 // ── Composio API helper ────────────────────────────────────────────────
