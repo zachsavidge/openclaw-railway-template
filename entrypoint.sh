@@ -55,6 +55,9 @@ gosu openclaw openclaw config set agents.defaults.heartbeat.every 0m 2>/dev/null
 # 8. Restrict bundled skills to reduce system prompt size
 gosu openclaw openclaw config set --json skills.allowBundled '["gog","weather"]' 2>/dev/null || true
 
+# 9. Composio Outlook MCP — james@elevatecappartners.com (read/write email + calendar)
+gosu openclaw openclaw config set --json mcpServers.composio-outlook '{"url":"https://backend.composio.dev/v3/mcp/fb375391-d039-4bbd-bc72-29016fa03c20","headers":{"x-api-key":"ak_fWyNZGido3At63My5hbl"}}' 2>/dev/null || true
+
 echo "[entrypoint] Applied cost-efficiency config"
 
 # Persist Homebrew to Railway volume so it survives container rebuilds
