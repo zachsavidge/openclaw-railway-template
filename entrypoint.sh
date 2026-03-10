@@ -56,8 +56,10 @@ gosu openclaw openclaw config set agents.defaults.models.anthropic/claude-haiku-
 gosu openclaw openclaw config set tools.web.fetch.maxCharsCap 20000 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.bootstrapMaxChars 15000 2>/dev/null || true
 
-# 7. Disable heartbeat to avoid idle token spend
-gosu openclaw openclaw config set agents.defaults.heartbeat.every 0m 2>/dev/null || true
+# 7. Heartbeat — EA checks for unread scheduling emails every 30 min
+gosu openclaw openclaw config set agents.defaults.heartbeat.every 30m 2>/dev/null || true
+# Try to use Haiku for heartbeat to reduce idle token spend (~$8/mo vs ~$37/mo)
+gosu openclaw openclaw config set agents.defaults.heartbeat.model anthropic/claude-haiku-4-5 2>/dev/null || true
 
 # 8. Restrict bundled skills to reduce system prompt size
 gosu openclaw openclaw config set --json skills.allowBundled '["gog","weather"]' 2>/dev/null || true

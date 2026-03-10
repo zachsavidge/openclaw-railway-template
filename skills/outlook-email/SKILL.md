@@ -111,7 +111,8 @@ node /app/src/outlook-skill.js get_profile '{}'
 
 - This skill only has access to **james@elevatecappartners.com** — no other mailboxes.
 - **Calendar delegation:** All calendar commands accept a `calendarOwner` parameter (email address) to operate on another user's calendar as a delegate. See BOOT.md for default delegation rules.
+- **EA heartbeat:** This skill is used on each heartbeat to check for unread scheduling requests and reply autonomously. See BOOT.md for the full EA workflow, timezone rules, and availability logic.
 - Email IDs (messageId) are returned by `list_emails` and `search_emails` — use them for `get_email`, `reply_email`, `forward_email`, and `delete_email`.
 - Calendar event IDs (eventId) are returned by `list_events` and `calendar_view`.
-- The search query uses Microsoft Graph search syntax (e.g., `from:name`, `subject:keyword`, `hasAttachment:true`).
+- The search query uses Microsoft Graph search syntax (e.g., `from:name`, `subject:keyword`, `hasAttachment:true`, `isRead:false`).
 - Output is automatically truncated to prevent large responses.
