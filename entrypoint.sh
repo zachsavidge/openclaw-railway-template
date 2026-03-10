@@ -15,6 +15,13 @@ if [ -d /app/skills ]; then
   echo "[entrypoint] Synced custom skills to workspace"
 fi
 
+# Sync BOOT.md (agent personality) to workspace
+if [ -f /app/BOOT.md ]; then
+  cp /app/BOOT.md /data/workspace/BOOT.md 2>/dev/null || true
+  chown openclaw:openclaw /data/workspace/BOOT.md 2>/dev/null || true
+  echo "[entrypoint] Synced BOOT.md to workspace"
+fi
+
 # ── Cost-efficiency configuration ─────────────────────────────────────
 # Applied on every boot to ensure correct values even after volume reset.
 # All commands suppress errors so a single bad key never blocks startup.
