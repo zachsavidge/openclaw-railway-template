@@ -185,15 +185,16 @@ const commands = {
   async list_events(args) {
     const input = {};
     if (args.top) input.top = args.top;
+    if (args.calendarOwner) input.user_id = args.calendarOwner;
     const result = await composioRequest("OUTLOOK_OUTLOOK_LIST_EVENTS", input);
     return result;
   },
 
   async get_event(args) {
     if (!args.eventId) throw new Error("Missing required arg: eventId");
-    const result = await composioRequest("OUTLOOK_OUTLOOK_GET_EVENT", {
-      event_id: args.eventId,
-    });
+    const input = { event_id: args.eventId };
+    if (args.calendarOwner) input.user_id = args.calendarOwner;
+    const result = await composioRequest("OUTLOOK_OUTLOOK_GET_EVENT", input);
     return result;
   },
 
@@ -209,6 +210,7 @@ const commands = {
     if (args.location) input.location = args.location;
     if (args.body) input.body = args.body;
     if (args.isOnline) input.is_online_meeting = true;
+    if (args.calendarOwner) input.user_id = args.calendarOwner;
     const result = await composioRequest("OUTLOOK_OUTLOOK_CALENDAR_CREATE_EVENT", input);
     return result;
   },
@@ -216,10 +218,12 @@ const commands = {
   async calendar_view(args) {
     if (!args.startDateTime || !args.endDateTime)
       throw new Error("Missing required args: startDateTime, endDateTime");
-    const result = await composioRequest("OUTLOOK_OUTLOOK_GET_SCHEDULE", {
+    const input = {
       start_date_time: args.startDateTime,
       end_date_time: args.endDateTime,
-    });
+    };
+    if (args.calendarOwner) input.user_id = args.calendarOwner;
+    const result = await composioRequest("OUTLOOK_OUTLOOK_GET_SCHEDULE", input);
     return result;
   },
 

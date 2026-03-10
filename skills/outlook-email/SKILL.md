@@ -80,24 +80,27 @@ node /app/src/outlook-skill.js list_folders '{}'
 
 ### List upcoming events
 ```bash
-node /app/src/outlook-skill.js list_events '{"top":10}'
+node /app/src/outlook-skill.js list_events '{"top":10,"calendarOwner":"zach@elevatecappartners.com"}'
 ```
+Optional args: `top`, `calendarOwner` (email of the calendar owner to query as delegate).
 
 ### Get a specific event
 ```bash
-node /app/src/outlook-skill.js get_event '{"eventId":"AAMkAG..."}'
+node /app/src/outlook-skill.js get_event '{"eventId":"AAMkAG...","calendarOwner":"zach@elevatecappartners.com"}'
 ```
+Optional args: `calendarOwner`.
 
 ### Create a calendar event
 ```bash
-node /app/src/outlook-skill.js create_event '{"subject":"Team Standup","start":"2026-03-10T10:00:00","end":"2026-03-10T10:30:00","attendees":["alice@example.com"],"location":"Conference Room A"}'
+node /app/src/outlook-skill.js create_event '{"subject":"Team Standup","start":"2026-03-10T10:00:00","end":"2026-03-10T10:30:00","attendees":["alice@example.com"],"location":"Conference Room A","calendarOwner":"zach@elevatecappartners.com"}'
 ```
-Optional args: `body`, `location`, `attendees` (array), `isOnline` (boolean).
+Optional args: `body`, `location`, `attendees` (array), `isOnline` (boolean), `calendarOwner`.
 
 ### View calendar for a date range
 ```bash
-node /app/src/outlook-skill.js calendar_view '{"startDateTime":"2026-03-10T00:00:00Z","endDateTime":"2026-03-11T00:00:00Z"}'
+node /app/src/outlook-skill.js calendar_view '{"startDateTime":"2026-03-10T00:00:00Z","endDateTime":"2026-03-11T00:00:00Z","calendarOwner":"zach@elevatecappartners.com"}'
 ```
+Optional args: `calendarOwner`.
 
 ### Get profile info
 ```bash
@@ -107,6 +110,7 @@ node /app/src/outlook-skill.js get_profile '{}'
 ## Important Notes
 
 - This skill only has access to **james@elevatecappartners.com** — no other mailboxes.
+- **Calendar delegation:** All calendar commands accept a `calendarOwner` parameter (email address) to operate on another user's calendar as a delegate. See BOOT.md for default delegation rules.
 - Email IDs (messageId) are returned by `list_emails` and `search_emails` — use them for `get_email`, `reply_email`, `forward_email`, and `delete_email`.
 - Calendar event IDs (eventId) are returned by `list_events` and `calendar_view`.
 - The search query uses Microsoft Graph search syntax (e.g., `from:name`, `subject:keyword`, `hasAttachment:true`).
