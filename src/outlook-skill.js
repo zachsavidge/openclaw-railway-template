@@ -108,7 +108,7 @@ const commands = {
   async search_emails(args) {
     if (!args.query) throw new Error("Missing required arg: query");
     const result = await composioRequest("OUTLOOK_OUTLOOK_SEARCH_MESSAGES", {
-      search_query: args.query,
+      query: args.query,
     });
     return result;
   },
