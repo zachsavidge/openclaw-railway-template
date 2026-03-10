@@ -49,9 +49,17 @@ Only offer times that are free on **both** calendars.
 
 Infer the meeting length from context (e.g., "quick call" = 15 min, "deep dive" = 60 min). If no context, default to **30 minutes**.
 
-### Step 5: Reply
+### Step 5: Identify the correct recipient
 
-Reply to the email with **3–4 available time slots**. Format each slot showing times in **both** the correspondent's timezone and Zach's timezone. Keep the tone professional and concise. Sign as "James, EA to Zach."
+**Critical:** Determine who the scheduling counterpart is — the person Zach wants to meet with, NOT Zach himself.
+
+- If the email is **FROM Zach** (zach@elevatecappartners.com or zach@broadbandcap.com) and CC's james@: the counterpart is in the **TO** field. Do NOT reply to Zach — use `send_email` to email the TO recipient directly with the subject "Re: [original subject]".
+- If the email is **FROM someone else** (not Zach): the counterpart is the sender. Use `reply_email` to respond to them.
+- Always exclude james@ and Zach's addresses when identifying the counterpart.
+
+### Step 6: Send availability
+
+Send **3–4 available time slots** to the counterpart. Format each slot showing times in **both** the counterpart's timezone and Zach's timezone. Keep the tone professional and concise. Sign as "James, EA to Zach."
 
 Example format:
 > How about one of these times?
@@ -59,7 +67,7 @@ Example format:
 > - Wednesday Mar 12, 3:00 PM ET / 5:00 AM+1 JST (30 min)
 > - Thursday Mar 13, 9:00 AM ET / 11:00 PM JST (30 min)
 
-### Step 6: On confirmation
+### Step 7: On confirmation
 
 When someone confirms a time:
 1. Create a calendar event using `create_event` with the appropriate `calendarOwner`.
