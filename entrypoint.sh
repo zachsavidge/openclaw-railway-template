@@ -8,12 +8,15 @@ chmod 700 /data 2>/dev/null || true
 chmod 700 /data/.openclaw 2>/dev/null || true
 chmod 700 /data/.openclaw/identity 2>/dev/null || true
 
-# Sync bundled custom skills to workspace (overwrites on each boot to stay current)
-if [ -d /app/skills ]; then
-  cp -r /app/skills/* /data/workspace/skills/ 2>/dev/null || true
-  chown -R openclaw:openclaw /data/workspace/skills 2>/dev/null || true
-  echo "[entrypoint] Synced custom skills to workspace"
+# Sync custom skills to workspace (only outlook-email — skip browser-automation to save prompt tokens)
+if [ -d /app/skills/outlook-email ]; then
+  mkdir -p /data/workspace/skills/outlook-email
+  cp -r /app/skills/outlook-email/* /data/workspace/skills/outlook-email/ 2>/dev/null || true
+  chown -R openclaw:openclaw /data/workspace/skills/outlook-email 2>/dev/null || true
+  echo "[entrypoint] Synced outlook-email skill to workspace"
 fi
+# Remove browser-automation skill if previously synced (saves ~1K tokens per API call)
+rm -rf /data/workspace/skills/browser-automation 2>/dev/null || true
 
 # Sync BOOT.md (agent personality) to workspace
 if [ -f /app/BOOT.md ]; then
@@ -69,8 +72,8 @@ gosu openclaw openclaw config set agents.defaults.heartbeat.every 30m 2>/dev/nul
 # Try to use Haiku for heartbeat to reduce idle token spend (~$4/mo vs ~$18/mo)
 gosu openclaw openclaw config set agents.defaults.heartbeat.model anthropic/claude-haiku-4-5 2>/dev/null || true
 
-# 8. Restrict bundled skills to reduce system prompt size
-gosu openclaw openclaw config set --json skills.allowBundled '["gog","weather"]' 2>/dev/null || true
+# 8. Disable all bundled skills to reduce system prompt size
+gosu openclaw openclaw config set --json skills.allowBundled '[]' 2>/dev/null || true
 
 echo "[entrypoint] Applied cost-efficiency config"
 
