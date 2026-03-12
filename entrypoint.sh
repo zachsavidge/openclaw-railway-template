@@ -68,8 +68,8 @@ gosu openclaw openclaw config set agents.defaults.contextPruning.softTrimRatio 0
 gosu openclaw openclaw config set agents.defaults.contextPruning.hardClearRatio 0.95 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.compaction.mode safeguard 2>/dev/null || true
 
-# 3. Model — Gemini 3.1 Flash-Lite (preview) for all tasks
-gosu openclaw openclaw config set agents.defaults.model.primary google/gemini-3.1-flash-lite-preview 2>/dev/null || true
+# 3. Model — Gemini 3.1 Pro for interactive tasks, Flash-Lite for heartbeats
+gosu openclaw openclaw config set agents.defaults.model.primary google/gemini-3.1-pro-preview 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.subagents.model google/gemini-3.1-flash-lite-preview 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.model.fallbacks google/gemini-2.5-flash 2>/dev/null || true
 
