@@ -46,10 +46,10 @@ gosu openclaw openclaw config set agents.defaults.contextPruning.softTrimRatio 0
 gosu openclaw openclaw config set agents.defaults.contextPruning.hardClearRatio 0.95 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.compaction.mode safeguard 2>/dev/null || true
 
-# 3. Model — Gemini 2.5 Flash primary, Gemini 2.0 Flash for heartbeat/subagents
-gosu openclaw openclaw config set agents.defaults.model.primary google/gemini-2.5-flash 2>/dev/null || true
-gosu openclaw openclaw config set agents.defaults.subagents.model google/gemini-2.0-flash 2>/dev/null || true
-gosu openclaw openclaw config set agents.defaults.model.fallbacks google/gemini-2.0-flash 2>/dev/null || true
+# 3. Model — Gemini 3.1 Flash-Lite (preview) for all tasks
+gosu openclaw openclaw config set agents.defaults.model.primary google/gemini-3.1-flash-lite-preview 2>/dev/null || true
+gosu openclaw openclaw config set agents.defaults.subagents.model google/gemini-3.1-flash-lite-preview 2>/dev/null || true
+gosu openclaw openclaw config set agents.defaults.model.fallbacks google/gemini-2.5-flash 2>/dev/null || true
 
 # 4. Tool output caps — reduce tokens consumed by tool results in context
 gosu openclaw openclaw config set tools.web.fetch.maxCharsCap 20000 2>/dev/null || true
@@ -58,7 +58,7 @@ gosu openclaw openclaw config set agents.defaults.bootstrapMaxChars 10000 2>/dev
 # 5. Heartbeat — EA checks for unread scheduling emails every 30 min
 #    Combined with active hours gate (8AM-9PM PT), this means ~26 heartbeats/day max
 gosu openclaw openclaw config set agents.defaults.heartbeat.every 30m 2>/dev/null || true
-gosu openclaw openclaw config set agents.defaults.heartbeat.model google/gemini-2.0-flash 2>/dev/null || true
+gosu openclaw openclaw config set agents.defaults.heartbeat.model google/gemini-3.1-flash-lite-preview 2>/dev/null || true
 
 # 7. Disable all bundled skills to reduce system prompt size
 gosu openclaw openclaw config set --json skills.allowBundled '[]' 2>/dev/null || true
