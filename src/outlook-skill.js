@@ -395,6 +395,16 @@ const commands = {
     return result;
   },
 
+  async get_timezone() {
+    // Fetch mailbox settings to get Zach's current timezone from Outlook
+    const result = await composioRequest("OUTLOOK_OUTLOOK_GET_MAILBOX_SETTINGS", {});
+    if (result && result.timeZone) {
+      return { timezone: result.timeZone };
+    }
+    // Fallback: extract from profile or return default
+    return { timezone: "America/Los_Angeles", source: "default" };
+  },
+
   async check_availability(args) {
     if (!isActiveHours()) return { skipped: true, reason: "Outside active hours (8 AM – 9 PM PT)" };
     if (!args.startDateTime || !args.endDateTime)
@@ -425,7 +435,7 @@ const commands = {
       type: 2, // scheduled meeting
       start_time: args.startTime,
       duration: args.duration || 30,
-      timezone: args.timezone || "America/New_York",
+      timezone: args.timezone || "America/Los_Angeles",
       userId: "me",
       settings__join__before__host: true,
       settings__waiting__room: false,

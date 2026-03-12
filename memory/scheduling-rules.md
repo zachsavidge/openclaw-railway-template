@@ -6,8 +6,9 @@
 - Unclear domain: default US rules, zach@elevatecappartners.com
 
 ## Timezone Windows
-- **US (Broadband):** correspondent 9AM-8PM ET, Zach 7AM-6PM ET. Offer overlap only.
-- **Japan (Elevate):** correspondent 7AM-6PM JST, Zach 7AM-10PM ET. Offer overlap only.
+- **US (Broadband):** correspondent 9AM-8PM ET, Zach 7AM-6PM PT. Offer overlap only.
+- **Japan (Elevate):** correspondent 7AM-6PM JST, Zach 7AM-10PM PT. Offer overlap only.
+- **Note:** Check Zach's Outlook calendar timezone setting if available — he travels, so PT may not always be current.
 
 ## Slot Presentation
 - Offer 3-4 times in both timezones
