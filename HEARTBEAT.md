@@ -2,6 +2,10 @@
 
 On this heartbeat, check for unread scheduling requests and handle them.
 
+### Active hours gate
+
+Before doing anything, check the current time in **US Pacific (PT)**. If it is **before 8:00 AM PT or after 9:00 PM PT**, respond with "Outside active hours (8 AM – 9 PM PT). Skipping." and **do nothing else**.
+
 ### Steps
 
 1. Run `search_emails` with query `isRead:false` (limit top 5). Process at most **3 scheduling requests** per heartbeat — leave the rest for the next cycle.

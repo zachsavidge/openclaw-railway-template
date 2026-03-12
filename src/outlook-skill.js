@@ -41,6 +41,20 @@ if (!COMPOSIO_API_KEY || !CONNECTED_ACCOUNT_ID) {
 }
 const MAX_OUTPUT = Number.parseInt(process.env.OUTLOOK_MAX_OUTPUT || "5000", 10);
 
+// ── Active hours gate (8 AM – 9 PM Pacific) ─────────────────────────
+
+const ACTIVE_START_HOUR = 8;  // 8 AM PT
+const ACTIVE_END_HOUR = 21;   // 9 PM PT
+
+function isActiveHours() {
+  // Get current hour in US Pacific time
+  const ptHour = Number.parseInt(
+    new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles", hour: "numeric", hour12: false }),
+    10,
+  );
+  return ptHour >= ACTIVE_START_HOUR && ptHour < ACTIVE_END_HOUR;
+}
+
 // ── Rate-limit, retry & cache helpers ────────────────────────────────
 
 const MIN_REQUEST_INTERVAL_MS = 500;   // 500ms between Composio calls
@@ -236,6 +250,7 @@ function trimEmails(raw) {
 
 const commands = {
   async list_emails(args) {
+    if (!isActiveHours()) return { skipped: true, reason: "Outside active hours (8 AM – 9 PM PT)" };
     const input = {};
     if (args.folder) input.folder_name = args.folder;
     if (args.top) input.top = args.top;
@@ -252,6 +267,7 @@ const commands = {
   },
 
   async search_emails(args) {
+    if (!isActiveHours()) return { skipped: true, reason: "Outside active hours (8 AM – 9 PM PT)" };
     if (!args.query) throw new Error("Missing required arg: query");
     const result = await composioRequest("OUTLOOK_OUTLOOK_SEARCH_MESSAGES", {
       query: args.query,
@@ -362,6 +378,7 @@ const commands = {
   },
 
   async calendar_view(args) {
+    if (!isActiveHours()) return { skipped: true, reason: "Outside active hours (8 AM – 9 PM PT)" };
     if (!args.startDateTime || !args.endDateTime)
       throw new Error("Missing required args: startDateTime, endDateTime");
     const input = {
@@ -379,6 +396,7 @@ const commands = {
   },
 
   async check_availability(args) {
+    if (!isActiveHours()) return { skipped: true, reason: "Outside active hours (8 AM – 9 PM PT)" };
     if (!args.startDateTime || !args.endDateTime)
       throw new Error("Missing required args: startDateTime, endDateTime");
     const input = {
