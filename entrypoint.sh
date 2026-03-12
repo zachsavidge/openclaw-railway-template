@@ -63,9 +63,9 @@ gosu openclaw openclaw config set agents.defaults.models.anthropic/claude-haiku-
 gosu openclaw openclaw config set tools.web.fetch.maxCharsCap 20000 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.bootstrapMaxChars 10000 2>/dev/null || true
 
-# 7. Heartbeat — EA checks for unread scheduling emails every 60 min
-#    Combined with active hours gate (8AM-9PM PT), this means ~13 heartbeats/day max
-gosu openclaw openclaw config set agents.defaults.heartbeat.every 60m 2>/dev/null || true
+# 7. Heartbeat — EA checks for unread scheduling emails every 30 min
+#    Combined with active hours gate (8AM-9PM PT), this means ~26 heartbeats/day max
+gosu openclaw openclaw config set agents.defaults.heartbeat.every 30m 2>/dev/null || true
 # Try to use Haiku for heartbeat to reduce idle token spend (~$4/mo vs ~$18/mo)
 gosu openclaw openclaw config set agents.defaults.heartbeat.model anthropic/claude-haiku-4-5 2>/dev/null || true
 
