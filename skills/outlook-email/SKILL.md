@@ -107,6 +107,16 @@ Optional args: `calendarOwner`.
 node /app/src/outlook-skill.js get_profile '{}'
 ```
 
+## Zoom Commands
+
+### Create a Zoom meeting
+```bash
+node /app/src/outlook-skill.js create_zoom '{"topic":"Sync with John","startTime":"2026-03-15T10:00:00Z","duration":30,"timezone":"America/New_York"}'
+```
+Required args: `topic`, `startTime` (ISO 8601).
+Optional args: `duration` (minutes, default 30), `timezone` (default America/New_York).
+Returns: Zoom meeting details including `join_url`. Use the `join_url` as the calendar event `location` and include it in the event `body`.
+
 ## Important Notes
 
 - This skill only has access to **james@elevatecappartners.com** — no other mailboxes.

@@ -23,6 +23,7 @@
 //   create_event    '{"subject":"Meeting","start":"2026-03-10T10:00:00","end":"2026-03-10T11:00:00","attendees":["a@b.com"]}'
 //   calendar_view   '{"startDateTime":"2026-03-10T00:00:00Z","endDateTime":"2026-03-11T00:00:00Z"}'
 //   get_profile     '{}'
+//   create_zoom     '{"topic":"Sync call","startTime":"2026-03-15T10:00:00Z","duration":30}'
 
 import https from "node:https";
 
@@ -30,18 +31,58 @@ import https from "node:https";
 
 const COMPOSIO_API_KEY = process.env.COMPOSIO_API_KEY;
 const CONNECTED_ACCOUNT_ID = process.env.COMPOSIO_OUTLOOK_ACCOUNT_ID;
+const ZOOM_ACCOUNT_ID = process.env.COMPOSIO_ZOOM_ACCOUNT_ID; // optional
 if (!COMPOSIO_API_KEY || !CONNECTED_ACCOUNT_ID) {
   console.log(JSON.stringify({ ok: false, error: "Missing COMPOSIO_API_KEY or COMPOSIO_OUTLOOK_ACCOUNT_ID env vars" }));
   process.exit(1);
 }
 const MAX_OUTPUT = Number.parseInt(process.env.OUTLOOK_MAX_OUTPUT || "5000", 10);
 
+// ── Rate-limit, retry & cache helpers ────────────────────────────────
+
+const MIN_REQUEST_INTERVAL_MS = 500;   // 500ms between Composio calls
+const MAX_RETRIES = 3;
+const BASE_BACKOFF_MS = 2000;          // 2s → 4s → 8s on 429
+
+let lastRequestTime = 0;
+
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/** Enforce minimum spacing between requests. */
+async function throttle() {
+  const now = Date.now();
+  const elapsed = now - lastRequestTime;
+  if (elapsed < MIN_REQUEST_INTERVAL_MS) {
+    await sleep(MIN_REQUEST_INTERVAL_MS - elapsed);
+  }
+  lastRequestTime = Date.now();
+}
+
+/** Simple in-process cache (survives one CLI invocation). */
+const requestCache = new Map();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function cacheKey(action, input) {
+  return `${action}:${JSON.stringify(input)}`;
+}
+
+// Actions that are safe to cache (read-only, idempotent)
+const CACHEABLE_ACTIONS = new Set([
+  "OUTLOOK_OUTLOOK_GET_SCHEDULE",
+  "OUTLOOK_OUTLOOK_LIST_EVENTS",
+  "OUTLOOK_OUTLOOK_GET_EVENT",
+  "OUTLOOK_OUTLOOK_GET_MESSAGE",
+  "OUTLOOK_OUTLOOK_GET_PROFILE",
+]);
+
 // ── Composio API helper ────────────────────────────────────────────────
 
-function composioRequest(actionName, input) {
+function composioRequestOnce(actionName, input, accountId) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
-      connectedAccountId: CONNECTED_ACCOUNT_ID,
+      connectedAccountId: accountId || CONNECTED_ACCOUNT_ID,
       input: input || {},
     });
 
@@ -62,9 +103,12 @@ function composioRequest(actionName, input) {
       res.on("data", (chunk) => (data += chunk));
       res.on("end", () => {
         try {
-          resolve(JSON.parse(data));
+          const parsed = JSON.parse(data);
+          // Surface the HTTP status so retry logic can see 429s
+          parsed._httpStatus = res.statusCode;
+          resolve(parsed);
         } catch {
-          resolve({ error: data });
+          resolve({ error: data, _httpStatus: res.statusCode });
         }
       });
     });
@@ -76,6 +120,52 @@ function composioRequest(actionName, input) {
     req.write(body);
     req.end();
   });
+}
+
+/**
+ * Composio request with throttle, retry on 429, and read-through cache.
+ */
+async function composioRequest(actionName, input, accountId) {
+  // Check cache for read-only actions
+  const key = cacheKey(actionName, input);
+  if (CACHEABLE_ACTIONS.has(actionName)) {
+    const cached = requestCache.get(key);
+    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+      return cached.data;
+    }
+  }
+
+  let lastError;
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    await throttle();
+    try {
+      const result = await composioRequestOnce(actionName, input, accountId);
+      const status = result._httpStatus;
+      delete result._httpStatus;
+
+      if (status === 429) {
+        const backoff = BASE_BACKOFF_MS * 2 ** attempt;
+        console.error(`[outlook-skill] 429 rate-limited on ${actionName}, retry ${attempt + 1}/${MAX_RETRIES} in ${backoff}ms`);
+        await sleep(backoff);
+        lastError = new Error(`Rate limited (429) on ${actionName}`);
+        continue;
+      }
+
+      // Cache successful read-only results
+      if (CACHEABLE_ACTIONS.has(actionName)) {
+        requestCache.set(key, { data: result, ts: Date.now() });
+      }
+      return result;
+    } catch (err) {
+      lastError = err;
+      if (attempt < MAX_RETRIES) {
+        const backoff = BASE_BACKOFF_MS * 2 ** attempt;
+        console.error(`[outlook-skill] Error on ${actionName}: ${err.message}, retry in ${backoff}ms`);
+        await sleep(backoff);
+      }
+    }
+  }
+  throw lastError;
 }
 
 function truncate(str) {
@@ -229,6 +319,27 @@ const commands = {
 
   async get_profile() {
     const result = await composioRequest("OUTLOOK_OUTLOOK_GET_PROFILE", {});
+    return result;
+  },
+
+  async create_zoom(args) {
+    if (!ZOOM_ACCOUNT_ID) {
+      throw new Error("Missing COMPOSIO_ZOOM_ACCOUNT_ID env var — Zoom not configured");
+    }
+    if (!args.topic || !args.startTime) {
+      throw new Error("Missing required args: topic, startTime");
+    }
+    const input = {
+      topic: args.topic,
+      type: 2, // scheduled meeting
+      start_time: args.startTime,
+      duration: args.duration || 30,
+      timezone: args.timezone || "America/New_York",
+      userId: "me",
+      settings__join__before__host: true,
+      settings__waiting__room: false,
+    };
+    const result = await composioRequest("ZOOM_CREATE_A_MEETING", input, ZOOM_ACCOUNT_ID);
     return result;
   },
 };

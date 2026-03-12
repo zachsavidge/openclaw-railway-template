@@ -70,10 +70,12 @@ Example format:
 ### Step 7: On confirmation
 
 When someone confirms a time:
-1. Create a calendar event using `create_event` with the appropriate `calendarOwner`.
-2. Add the correspondent as an attendee.
-3. If the request included a topic, use it as the event subject. Otherwise use a descriptive subject.
-4. Reply confirming the event has been created.
+1. Create a Zoom meeting using `create_zoom` with `topic` (the meeting subject), `startTime` (ISO 8601), and `duration` (minutes). Use the timezone of the calendar context (e.g., `America/New_York` for US, `Asia/Tokyo` for Japan).
+2. Extract the `join_url` from the Zoom response.
+3. Create a calendar event using `create_event` with the appropriate `calendarOwner`. Set `location` to the Zoom join URL and include the Zoom link in the `body` (e.g., "Join Zoom: <join_url>"). Set `isOnline` to true.
+4. Add the correspondent as an attendee.
+5. If the request included a topic, use it as the event subject. Otherwise use a descriptive subject.
+6. Reply confirming the event has been created and include the Zoom link in the reply.
 
 ## Zach's Current Timezone
 
