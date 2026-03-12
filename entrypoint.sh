@@ -8,15 +8,19 @@ chmod 700 /data 2>/dev/null || true
 chmod 700 /data/.openclaw 2>/dev/null || true
 chmod 700 /data/.openclaw/identity 2>/dev/null || true
 
-# Sync custom skills to workspace (only outlook-email — skip browser-automation to save prompt tokens)
+# Sync custom skills to workspace
 if [ -d /app/skills/outlook-email ]; then
   mkdir -p /data/workspace/skills/outlook-email
   cp -r /app/skills/outlook-email/* /data/workspace/skills/outlook-email/ 2>/dev/null || true
   chown -R openclaw:openclaw /data/workspace/skills/outlook-email 2>/dev/null || true
   echo "[entrypoint] Synced outlook-email skill to workspace"
 fi
-# Remove browser-automation skill if previously synced (saves ~1K tokens per API call)
-rm -rf /data/workspace/skills/browser-automation 2>/dev/null || true
+if [ -d /app/skills/browser-automation ]; then
+  mkdir -p /data/workspace/skills/browser-automation
+  cp -r /app/skills/browser-automation/* /data/workspace/skills/browser-automation/ 2>/dev/null || true
+  chown -R openclaw:openclaw /data/workspace/skills/browser-automation 2>/dev/null || true
+  echo "[entrypoint] Synced browser-automation skill to workspace"
+fi
 
 # Sync BOOT.md (agent personality) to workspace
 if [ -f /app/BOOT.md ]; then
