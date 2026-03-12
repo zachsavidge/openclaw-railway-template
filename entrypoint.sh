@@ -32,6 +32,28 @@ if [ -f /app/HEARTBEAT.md ]; then
   echo "[entrypoint] Synced HEARTBEAT.md to workspace"
 fi
 
+# Sync USER.md (identity & preferences) to workspace
+if [ -f /app/USER.md ]; then
+  cp /app/USER.md /data/workspace/USER.md 2>/dev/null || true
+  chown openclaw:openclaw /data/workspace/USER.md 2>/dev/null || true
+  echo "[entrypoint] Synced USER.md to workspace"
+fi
+
+# Sync SOUL.md (behavioral core) to workspace
+if [ -f /app/SOUL.md ]; then
+  cp /app/SOUL.md /data/workspace/SOUL.md 2>/dev/null || true
+  chown openclaw:openclaw /data/workspace/SOUL.md 2>/dev/null || true
+  echo "[entrypoint] Synced SOUL.md to workspace"
+fi
+
+# Sync memory/ folder (indexed by memorySearch) to workspace
+if [ -d /app/memory ]; then
+  mkdir -p /data/workspace/memory
+  cp -r /app/memory/* /data/workspace/memory/ 2>/dev/null || true
+  chown -R openclaw:openclaw /data/workspace/memory 2>/dev/null || true
+  echo "[entrypoint] Synced memory/ folder to workspace"
+fi
+
 # ── Cost-efficiency configuration ─────────────────────────────────────
 # Applied on every boot to ensure correct values even after volume reset.
 # All commands suppress errors so a single bad key never blocks startup.
@@ -62,6 +84,11 @@ gosu openclaw openclaw config set agents.defaults.heartbeat.model google/gemini-
 
 # 7. Disable all bundled skills to reduce system prompt size
 gosu openclaw openclaw config set --json skills.allowBundled '[]' 2>/dev/null || true
+
+# 8. Memory search — surgical context retrieval from memory/ folder
+gosu openclaw openclaw config set agents.defaults.memorySearch.enabled true 2>/dev/null || true
+gosu openclaw openclaw config set agents.defaults.memorySearch.query.maxResults 3 2>/dev/null || true
+gosu openclaw openclaw config set agents.defaults.memorySearch.sync.watch true 2>/dev/null || true
 
 echo "[entrypoint] Applied cost-efficiency config"
 
