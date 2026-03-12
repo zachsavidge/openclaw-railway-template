@@ -4,7 +4,7 @@ On this heartbeat, check for unread scheduling requests and handle them.
 
 ### Steps
 
-1. Run `search_emails` with query `isRead:false` (limit top 15).
+1. Run `search_emails` with query `isRead:false` (limit top 5). Process at most **3 scheduling requests** per heartbeat — leave the rest for the next cycle.
 2. For each unread email, determine if it is a **scheduling request** — someone asking for a meeting, call, coffee chat, availability, or trying to coordinate time.
 3. **Scheduling requests** → follow the Scheduling Workflow in BOOT.md.
 4. **Non-scheduling emails** → leave them alone for Zach.

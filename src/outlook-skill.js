@@ -23,9 +23,12 @@
 //   create_event    '{"subject":"Meeting","start":"2026-03-10T10:00:00","end":"2026-03-10T11:00:00","attendees":["a@b.com"]}'
 //   calendar_view   '{"startDateTime":"2026-03-10T00:00:00Z","endDateTime":"2026-03-11T00:00:00Z"}'
 //   get_profile     '{}'
+//   check_availability '{"startDateTime":"...","endDateTime":"..."}'  (both calendars, cached)
 //   create_zoom     '{"topic":"Sync call","startTime":"2026-03-15T10:00:00Z","duration":30}'
 
 import https from "node:https";
+import fs from "node:fs";
+import path from "node:path";
 
 // ── Configuration ──────────────────────────────────────────────────────
 
@@ -60,12 +63,33 @@ async function throttle() {
   lastRequestTime = Date.now();
 }
 
-/** Simple in-process cache (survives one CLI invocation). */
-const requestCache = new Map();
+/** File-based cache — persists across CLI invocations within the same heartbeat. */
+const CACHE_DIR = process.env.OUTLOOK_CACHE_DIR || "/tmp/outlook-skill-cache";
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
+try { fs.mkdirSync(CACHE_DIR, { recursive: true }); } catch {}
+
 function cacheKey(action, input) {
-  return `${action}:${JSON.stringify(input)}`;
+  // Simple hash to make a safe filename
+  const raw = `${action}:${JSON.stringify(input)}`;
+  let h = 0;
+  for (let i = 0; i < raw.length; i++) h = ((h << 5) - h + raw.charCodeAt(i)) | 0;
+  return `${action}_${(h >>> 0).toString(36)}`;
+}
+
+function cacheGet(key) {
+  try {
+    const file = path.join(CACHE_DIR, `${key}.json`);
+    const stat = fs.statSync(file);
+    if (Date.now() - stat.mtimeMs > CACHE_TTL_MS) { fs.unlinkSync(file); return null; }
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch { return null; }
+}
+
+function cacheSet(key, data) {
+  try {
+    fs.writeFileSync(path.join(CACHE_DIR, `${key}.json`), JSON.stringify(data));
+  } catch {}
 }
 
 // Actions that are safe to cache (read-only, idempotent)
@@ -126,13 +150,11 @@ function composioRequestOnce(actionName, input, accountId) {
  * Composio request with throttle, retry on 429, and read-through cache.
  */
 async function composioRequest(actionName, input, accountId) {
-  // Check cache for read-only actions
+  // Check file-based cache for read-only actions
   const key = cacheKey(actionName, input);
   if (CACHEABLE_ACTIONS.has(actionName)) {
-    const cached = requestCache.get(key);
-    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-      return cached.data;
-    }
+    const cached = cacheGet(key);
+    if (cached) return cached;
   }
 
   let lastError;
@@ -151,9 +173,9 @@ async function composioRequest(actionName, input, accountId) {
         continue;
       }
 
-      // Cache successful read-only results
+      // Cache successful read-only results to disk
       if (CACHEABLE_ACTIONS.has(actionName)) {
-        requestCache.set(key, { data: result, ts: Date.now() });
+        cacheSet(key, result);
       }
       return result;
     } catch (err) {
@@ -176,6 +198,40 @@ function truncate(str) {
   return str;
 }
 
+// ── Response trimmers (reduce LLM token consumption) ─────────────────
+
+/** Keep only fields the agent needs from calendar events. */
+function trimCalendarEvents(raw) {
+  const events = raw?.data?.response_data || raw?.response_data || raw?.data || [];
+  if (!Array.isArray(events)) return raw;
+  return events.map((e) => ({
+    id: e.id,
+    subject: e.subject,
+    start: e.start?.dateTime || e.start,
+    end: e.end?.dateTime || e.end,
+    isAllDay: e.isAllDay,
+    showAs: e.showAs,
+    location: e.location?.displayName || e.location,
+  }));
+}
+
+/** Keep only fields the agent needs from email search results. */
+function trimEmails(raw) {
+  const msgs = raw?.data?.response_data || raw?.response_data || raw?.data || [];
+  if (!Array.isArray(msgs)) return raw;
+  return msgs.map((m) => ({
+    id: m.id,
+    subject: m.subject,
+    from: m.from?.emailAddress?.address || m.from,
+    to: (m.toRecipients || []).map((r) => r.emailAddress?.address || r).join(", "),
+    cc: (m.ccRecipients || []).map((r) => r.emailAddress?.address || r).join(", "),
+    date: m.receivedDateTime || m.sentDateTime,
+    isRead: m.isRead,
+    preview: (m.bodyPreview || "").substring(0, 200),
+    conversationId: m.conversationId,
+  }));
+}
+
 // ── Command handlers ───────────────────────────────────────────────────
 
 const commands = {
@@ -184,7 +240,7 @@ const commands = {
     if (args.folder) input.folder_name = args.folder;
     if (args.top) input.top = args.top;
     const result = await composioRequest("OUTLOOK_OUTLOOK_LIST_MESSAGES", input);
-    return result;
+    return args.raw ? result : trimEmails(result);
   },
 
   async get_email(args) {
@@ -200,7 +256,7 @@ const commands = {
     const result = await composioRequest("OUTLOOK_OUTLOOK_SEARCH_MESSAGES", {
       query: args.query,
     });
-    return result;
+    return args.raw ? result : trimEmails(result);
   },
 
   async send_email(args) {
@@ -314,12 +370,29 @@ const commands = {
     };
     if (args.calendarOwner) input.user_id = args.calendarOwner;
     const result = await composioRequest("OUTLOOK_OUTLOOK_GET_SCHEDULE", input);
-    return result;
+    return args.raw ? result : trimCalendarEvents(result);
   },
 
   async get_profile() {
     const result = await composioRequest("OUTLOOK_OUTLOOK_GET_PROFILE", {});
     return result;
+  },
+
+  async check_availability(args) {
+    if (!args.startDateTime || !args.endDateTime)
+      throw new Error("Missing required args: startDateTime, endDateTime");
+    const input = {
+      start_date_time: args.startDateTime,
+      end_date_time: args.endDateTime,
+    };
+    const [elevate, broadband] = await Promise.all([
+      composioRequest("OUTLOOK_OUTLOOK_GET_SCHEDULE", { ...input, user_id: "zach@elevatecappartners.com" }),
+      composioRequest("OUTLOOK_OUTLOOK_GET_SCHEDULE", { ...input, user_id: "zach@broadbandcap.com" }),
+    ]);
+    return {
+      elevate: trimCalendarEvents(elevate),
+      broadband: trimCalendarEvents(broadband),
+    };
   },
 
   async create_zoom(args) {

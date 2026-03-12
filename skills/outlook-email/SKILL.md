@@ -102,6 +102,12 @@ node /app/src/outlook-skill.js calendar_view '{"startDateTime":"2026-03-10T00:00
 ```
 Optional args: `calendarOwner`.
 
+### Check availability on both calendars (preferred)
+```bash
+node /app/src/outlook-skill.js check_availability '{"startDateTime":"2026-03-10T00:00:00Z","endDateTime":"2026-03-13T00:00:00Z"}'
+```
+Fetches both Zach's calendars in one call. Returns `{ elevate: [...], broadband: [...] }` with trimmed event data. Results are cached for 5 min — use this instead of calling `calendar_view` twice.
+
 ### Get profile info
 ```bash
 node /app/src/outlook-skill.js get_profile '{}'
