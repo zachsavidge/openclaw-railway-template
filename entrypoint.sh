@@ -40,39 +40,27 @@ fi
 gosu openclaw openclaw config set agents.defaults.maxConcurrent 1 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.subagents.maxConcurrent 2 2>/dev/null || true
 
-# 2. Prompt caching — 5-minute short cache (user preference)
-gosu openclaw openclaw config set agents.defaults.models.anthropic/claude-sonnet-4-6.params.cacheRetention short 2>/dev/null || true
-
-# 3. Context pruning — align TTL with short cache, drop stale tokens early
-gosu openclaw openclaw config set agents.defaults.contextPruning.mode cache-ttl 2>/dev/null || true
-gosu openclaw openclaw config set agents.defaults.contextPruning.ttl 5m 2>/dev/null || true
+# 2. Context pruning — drop stale tokens early
 gosu openclaw openclaw config set agents.defaults.contextPruning.keepLastAssistants 1 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.contextPruning.softTrimRatio 0.8 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.contextPruning.hardClearRatio 0.95 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.compaction.mode safeguard 2>/dev/null || true
 
-# 4. Context window cap — heartbeat is simple, doesn't need large context
-gosu openclaw openclaw config set agents.defaults.models.anthropic/claude-sonnet-4-6.params.contextWindow 16000 2>/dev/null || true
+# 3. Model — Gemini 2.5 Flash primary, Gemini 2.0 Flash for heartbeat/subagents
+gosu openclaw openclaw config set agents.defaults.model.primary google/gemini-2.5-flash 2>/dev/null || true
+gosu openclaw openclaw config set agents.defaults.subagents.model google/gemini-2.0-flash 2>/dev/null || true
+gosu openclaw openclaw config set agents.defaults.model.fallbacks google/gemini-2.0-flash 2>/dev/null || true
 
-# 5. Model tiering — Sonnet primary, Haiku for subagents and rate-limit fallback
-#    NOTE: subagents.model may not be enforced due to OpenClaw bug #10883
-gosu openclaw openclaw config set agents.defaults.model.primary anthropic/claude-sonnet-4-6 2>/dev/null || true
-gosu openclaw openclaw config set agents.defaults.subagents.model anthropic/claude-haiku-4-5 2>/dev/null || true
-gosu openclaw openclaw config set agents.defaults.model.fallbacks anthropic/claude-haiku-4-5 2>/dev/null || true
-gosu openclaw openclaw config set agents.defaults.models.anthropic/claude-haiku-4-5.params.cacheRetention short 2>/dev/null || true
-gosu openclaw openclaw config set agents.defaults.models.anthropic/claude-haiku-4-5.params.contextWindow 16000 2>/dev/null || true
-
-# 6. Tool output caps — reduce tokens consumed by tool results in context
+# 4. Tool output caps — reduce tokens consumed by tool results in context
 gosu openclaw openclaw config set tools.web.fetch.maxCharsCap 20000 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.bootstrapMaxChars 10000 2>/dev/null || true
 
-# 7. Heartbeat — EA checks for unread scheduling emails every 30 min
+# 5. Heartbeat — EA checks for unread scheduling emails every 30 min
 #    Combined with active hours gate (8AM-9PM PT), this means ~26 heartbeats/day max
 gosu openclaw openclaw config set agents.defaults.heartbeat.every 30m 2>/dev/null || true
-# Try to use Haiku for heartbeat to reduce idle token spend (~$4/mo vs ~$18/mo)
-gosu openclaw openclaw config set agents.defaults.heartbeat.model anthropic/claude-haiku-4-5 2>/dev/null || true
+gosu openclaw openclaw config set agents.defaults.heartbeat.model google/gemini-2.0-flash 2>/dev/null || true
 
-# 8. Disable all bundled skills to reduce system prompt size
+# 7. Disable all bundled skills to reduce system prompt size
 gosu openclaw openclaw config set --json skills.allowBundled '[]' 2>/dev/null || true
 
 echo "[entrypoint] Applied cost-efficiency config"
