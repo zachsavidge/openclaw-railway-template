@@ -41,10 +41,10 @@ if (!COMPOSIO_API_KEY || !CONNECTED_ACCOUNT_ID) {
 }
 const MAX_OUTPUT = Number.parseInt(process.env.OUTLOOK_MAX_OUTPUT || "5000", 10);
 
-// ── Active hours gate (8 AM – 9 PM Pacific) ─────────────────────────
+// ── Active hours gate (6 AM – 10 PM Pacific) ────────────────────────
 
-const ACTIVE_START_HOUR = 8;  // 8 AM PT
-const ACTIVE_END_HOUR = 21;   // 9 PM PT
+const ACTIVE_START_HOUR = 6;  // 6 AM PT
+const ACTIVE_END_HOUR = 22;   // 10 PM PT
 
 function isActiveHours() {
   // Get current hour in US Pacific time

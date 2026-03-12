@@ -77,9 +77,9 @@ gosu openclaw openclaw config set agents.defaults.model.fallbacks google/gemini-
 gosu openclaw openclaw config set tools.web.fetch.maxCharsCap 20000 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.bootstrapMaxChars 10000 2>/dev/null || true
 
-# 5. Heartbeat — EA checks for unread scheduling emails every 30 min
-#    Combined with active hours gate (8AM-9PM PT), this means ~26 heartbeats/day max
-gosu openclaw openclaw config set agents.defaults.heartbeat.every 30m 2>/dev/null || true
+# 5. Heartbeat — EA checks for unread scheduling emails every 15 min
+#    Combined with active hours gate (6AM-10PM PT), this means ~64 heartbeats/day max
+gosu openclaw openclaw config set agents.defaults.heartbeat.every 15m 2>/dev/null || true
 gosu openclaw openclaw config set agents.defaults.heartbeat.model google/gemini-3.1-flash-lite-preview 2>/dev/null || true
 
 # 7. Disable all bundled skills to reduce system prompt size
