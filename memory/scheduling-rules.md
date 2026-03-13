@@ -20,8 +20,13 @@
 - FROM someone else: use `reply_email`
 - Always exclude james@ and Zach's addresses from recipient list
 
-## On Confirmation
-1. Create Zoom via `create_zoom`
-2. Get `join_url` from response
-3. Create calendar event with `location`=join_url, `isOnline`=true, add attendee
-4. Reply to thread with Zoom link
+## Thread Workflow
+For every scheduling email, load the full thread (`search_emails` with `conversationId:{id}`) and determine the current state:
+
+1. **New request** (no prior james@ reply): `check_availability` → propose 3-4 times via `reply_email`
+2. **Counterparty replied with preference**: confirm the chosen time via `reply_email`, then proceed to step 4
+3. **Counterparty proposed alternate times**: check availability for those times, accept one that works, or counter-propose
+4. **Time confirmed**: Create Zoom via `create_zoom` → get `join_url` → create calendar event with `location`=join_url, `isOnline`=true, add attendee → reply to thread with confirmation + Zoom link
+5. **Meeting already booked** (calendar invite sent): skip, thread is complete
+
+Always reply within the same thread using `reply_email` with the latest messageId. Never start a new email chain for an ongoing scheduling conversation.
